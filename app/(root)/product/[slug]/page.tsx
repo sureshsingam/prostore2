@@ -6,9 +6,11 @@ import { notFound } from "next/navigation";
 import ProductPrice from "@/components/shared/product/product-price";
 import ProductImages from "@/components/shared/product/product-images";
 
-const ProductDetailsPage = async ({ params }) => {
-  const parameters = await params;
-  const slug = parameters.slug;
+const ProductDetailsPage = async (props: {
+  params: Promise<{ slug: string }>;
+}) => {
+  const { slug } = await props.params;
+
   const product = await getProductBySlug(slug);
   if (!product) {
     notFound();

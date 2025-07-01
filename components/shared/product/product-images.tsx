@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 
 const ProductImages = ({ images }: { images: string[] }) => {
   //   console.log(images);
