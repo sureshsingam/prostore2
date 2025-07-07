@@ -27,7 +27,7 @@ export async function signInWithCredentials(
     await signIn("credentials", user, { redirectTo: callbackUrl });
     return { success: true, message: "Signed in successfully" };
   } catch (error) {
-    if (isRedirectError(error)) {
+    if (isRedirectError(error) as any) {
       throw error;
     }
 
@@ -72,10 +72,10 @@ export async function signUpUser(prevState: unknown, formData: FormData) {
 
     return { success: true, message: "User registered successfully" };
   } catch (error) {
-    if (isRedirectError(error)) {
+    if (isRedirectError(error) as any) {
       throw error;
     }
 
-    return { success: false, message: formatErrors(error) };
+    return { success: false, message: formatErrors(error) as any };
   }
 }
