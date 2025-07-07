@@ -97,5 +97,4 @@ const CredentialsSignUpForm = () => {
   );
 };
 
-//test
 export default CredentialsSignUpForm;
