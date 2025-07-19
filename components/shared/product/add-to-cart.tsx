@@ -1,12 +1,12 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { CartItem } from "@/types";
-import { addItemToCart } from "@/lib/actions/cart.action";
+import { Cart, CartItem } from "@/types";
+import { addItemToCart, removeItemFromCart } from "@/lib/actions/cart.action";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 
-const AddToCart = ({ item }: { item: CartItem }) => {
+const AddToCart = ({ cart, item }: { cart?: Cart; item: CartItem }) => {
   const router = useRouter();
 
   const handleAddToCart = async () => {
@@ -25,16 +25,47 @@ const AddToCart = ({ item }: { item: CartItem }) => {
       },
     });
   };
-  return (
-    <>
-      <Button
-        className="w-full cursor-pointer bg-primary text-white hover:bg-gray-800"
-        type="button"
-        onClick={handleAddToCart}
-      >
-        <Plus /> Add To Cart
+
+  // handle remove from Cart
+  const handleRemoveFromCart = async () => {
+    const res = await removeItemFromCart(item.productId);
+
+    // deal with response,
+    if (!res.success) {
+      toast.error(res.message); // Changed to use toast.error (dot notation)
+      return;
+    }
+    //Handle success add to cart
+    toast.success(res.message, {
+      action: {
+        label: "Go to Cart",
+        onClick: () => router.push("/cart"),
+      },
+    });
+  };
+
+  // Check if item is in Cart
+  const existItem =
+    cart && cart.items.find((x) => x.productId === item.productId);
+
+  return existItem ? (
+    <div>
+      <Button type="button" variant="outline" onClick={handleRemoveFromCart}>
+        <Minus className="h-4 w-4"> </Minus>
       </Button>
-    </>
+      <span className="px-2"> {existItem.qty}</span>
+      <Button type="button" variant="outline" onClick={handleAddToCart}>
+        <Plus className="h-4 w-4" />
+      </Button>
+    </div>
+  ) : (
+    <Button
+      className="w-full cursor-pointer bg-primary text-white hover:bg-gray-800"
+      type="button"
+      onClick={handleAddToCart}
+    >
+      <Plus /> Add To Cart
+    </Button>
   );
 };
 
