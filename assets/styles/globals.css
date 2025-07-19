@@ -169,3 +169,23 @@ html.dark .upload-field .text-white {
 .upload-field .text-white {
   color: #000 !important;
 }
+
+/* Toast action button styling - "Go to Cart" button */
+[data-sonner-toast] [data-button] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 0.375rem !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 500 !important;
+  transition: background-color 0.2s ease !important;
+}
+
+[data-sonner-toast] [data-button]:hover {
+  background-color: #333333 !important;
+}
+
+[data-sonner-toast] [data-button]:focus {
+  outline: 2px solid #000000 !important;
+  outline-offset: 2px !important;
+}
