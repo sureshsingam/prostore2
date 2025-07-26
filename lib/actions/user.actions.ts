@@ -5,6 +5,7 @@ import {
   signInFormSchema,
   signUpFormSchema,
 } from "../validators";
+import { ShippingAddress } from "@/types";
 import { auth, signIn } from "@/auth";
 import { signOut } from "@/auth";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
