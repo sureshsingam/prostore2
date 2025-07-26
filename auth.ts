@@ -69,6 +69,7 @@ export const config = {
     async jwt({ token, user, trigger, session }: any) {
       // Assign user fields to token only if user exists (during initial sign-in)
       if (user) {
+        token.id = user.id;
         token.role = user.role;
 
         // if user has no name then use the email
@@ -86,6 +87,54 @@ export const config = {
             // Continue with token creation even if DB update fails
           }
         }
+        // checks if the trigger is sign in or sign up
+        if (trigger === "signIn" || trigger === "signUp") {
+          // Handle cart persistence with error handling to prevent auth failures
+          try {
+            // get session cart ID from cookie
+            const cookiesObject = await cookies();
+            const sessionCartId = cookiesObject.get("sessionCartId")?.value;
+            if (sessionCartId) {
+              //get cart from database
+              const sessionCart = await prisma.cart.findFirst({
+                where: { sessionCartId: sessionCartId },
+              });
+
+              if (sessionCart) {
+                //override any user cart
+                await prisma.cart.deleteMany({
+                  where: { userId: user.id },
+                });
+
+                // Verify cart still exists before update (prevents race condition)
+                const cartExists = await prisma.cart.findUnique({
+                  where: { id: sessionCart.id },
+                });
+
+                if (cartExists) {
+                  // assign new cart
+                  await prisma.cart.update({
+                    where: { id: sessionCart.id },
+                    data: { userId: user.id },
+                  });
+                } else {
+                  console.warn(
+                    `Cart ${sessionCart.id} no longer exists, skipping cart transfer`
+                  );
+                }
+              }
+            }
+          } catch (error) {
+            // Log error but don't break authentication
+            console.error("Cart transfer failed during authentication:", error);
+            console.error("Authentication will continue without cart transfer");
+          }
+        }
+      }
+
+      // Handle Session updates
+      if (session?.user.name && trigger === "update") {
+        token.name = session.user.name;
       }
 
       // During token refresh, user will be undefined, so we preserve existing token data
