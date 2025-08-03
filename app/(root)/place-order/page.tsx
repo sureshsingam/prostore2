@@ -112,7 +112,7 @@ const PlaceOrderPage = async () => {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <span className="px-2">{item.qty}</span>
+                        <span className="px-2">{item.quantity}</span>
                       </TableCell>
                       <TableCell>${item.price}</TableCell>
                     </TableRow>

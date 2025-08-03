@@ -72,7 +72,7 @@ export async function createOrder() {
             slug: item.slug,
             image: item.image,
             price: item.price,
-            quantity: item.qty, // Map qty to quantity
+            quantity: item.quantity,
             orderId: insertedOrder.id,
           },
         });

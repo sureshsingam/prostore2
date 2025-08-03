@@ -11,7 +11,7 @@ import { Prisma } from "../generated/prisma/client";
 //calculate Price function
 const calcPrice = (items: CartItem[]) => {
   const itemsPrice = round2(
-      items.reduce((acc, item) => acc + Number(item.price) * item.qty, 0)
+      items.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0)
     ),
     shippingPrice = round2(itemsPrice > 100 ? 0 : 10),
     taxPrice = round2(0.15 * itemsPrice),
@@ -79,14 +79,14 @@ export async function addItemToCart(data: CartItem) {
       // check if item exist
       if (existItem) {
         //checkStock
-        if (product.stock < existItem.qty + 1) {
+        if (product.stock < existItem.quantity + 1) {
           throw new Error("Not Enough Stock");
         }
 
         // increase the quantity in cart
         (cart.items as CartItem[]).find(
           (x) => x.productId === item.productId
-        )!.qty = existItem.qty + 1;
+        )!.quantity = existItem.quantity + 1;
       } else {
         //if Items does not exist in cart
         //check Stock
@@ -186,15 +186,16 @@ export async function removeItemFromCart(productId: string) {
     }
 
     // check if item only has one quantity, remove it, if has more than one, remove only one.
-    if (exist.qty === 1) {
+    if (exist.quantity === 1) {
       //remove cart
       cart.items = (cart.items as CartItem[]).filter(
         (x) => x.productId != exist.productId
       );
     } else {
       // Decrease qty
-      (cart.items as CartItem[]).find((x) => x.productId === productId)!.qty =
-        exist.qty - 1;
+      (cart.items as CartItem[]).find(
+        (x) => x.productId === productId
+      )!.quantity = exist.quantity - 1;
     }
 
     // update cart in database

@@ -65,7 +65,7 @@ const AddToCart = ({ cart, item }: { cart?: Cart; item: CartItem }) => {
           <Minus className="h-4 w-4"> </Minus>
         )}
       </Button>
-      <span className="px-2"> {existItem.qty}</span>
+      <span className="px-2"> {existItem.quantity}</span>
       <Button type="button" variant="outline" onClick={handleAddToCart}>
         {isPending ? (
           <Loader className="w-4 h-4 animate-spin" />
