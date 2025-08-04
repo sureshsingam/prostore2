@@ -110,3 +110,11 @@ export const insertOrderItemSchema = z.object({
   price: currency,
   quantity: z.number(),
 });
+
+// schema for paypal payment result schema
+export const paymentResultSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  email_address: z.string(),
+  pricePaid: z.string(),
+});
