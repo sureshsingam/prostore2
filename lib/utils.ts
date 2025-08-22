@@ -141,3 +141,11 @@ export function formUrlQuery({
     }
   );
 }
+
+// create currency formatter.
+const NUMBER_FORMATTER = new Intl.NumberFormat("en-CA");
+
+// Format currency using the formatter above
+export function formatNumber(number: number) {
+  return NUMBER_FORMATTER.format(number);
+}
