@@ -39,7 +39,7 @@ const DeleteDialog = ({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="sm" className="ml-2">
+        <Button variant="destructive" size="sm" className="ml-2 cursor-pointer">
           Delete
         </Button>
       </AlertDialogTrigger>
@@ -51,9 +51,12 @@ const DeleteDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel> Cancel </AlertDialogCancel>
+          <AlertDialogCancel className="cursor-pointer">
+            Cancel
+          </AlertDialogCancel>
           <Button
             variant="outline"
+            className="cursor-pointer"
             size="sm"
             disabled={isPending}
             onClick={handleDeleteClick}
