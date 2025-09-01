@@ -189,3 +189,12 @@ html.dark .upload-field .text-white {
   outline: 2px solid #000000 !important;
   outline-offset: 2px !important;
 }
+
+/* uploadthing button text override*/
+html.dark .upload-field .text-white {
+  color: #ffffff !important;
+}
+
+.upload-field .text-white {
+  color: #000000 !important;
+}

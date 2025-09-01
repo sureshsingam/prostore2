@@ -103,7 +103,11 @@ const PlaceOrderPage = async () => {
                           className="flex items-center"
                         >
                           <Image
-                            src={item.image}
+                            src={
+                              item.image && item.image.trim() !== ""
+                                ? item.image
+                                : "/images/placeholder.svg"
+                            }
                             alt={item.name}
                             width={50}
                             height={50}

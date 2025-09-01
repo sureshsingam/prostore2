@@ -5,7 +5,7 @@ import { insertProductSchema, updateProductSchema } from "@/lib/validators";
 import { Product } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { ControllerRenderProps, useForm } from "react-hook-form";
+import { ControllerRenderProps, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
   Form,
@@ -20,6 +20,13 @@ import slugify from "slugify";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
+import { createProduct, updateProduct } from "@/lib/actions/product.actions";
+import { UploadButton } from "@/lib/uploadthing";
+import { Card, CardContent } from "../ui/card";
+import Image from "next/image";
+import { useState } from "react";
+import React from "react";
+import { Checkbox } from "../ui/checkbox";
 
 const ProductForm = ({
   type,
@@ -31,6 +38,11 @@ const ProductForm = ({
   productId?: string;
 }) => {
   const router = useRouter();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadTimeout, setUploadTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   const form = useForm<z.infer<typeof insertProductSchema>>({
     resolver: zodResolver(
@@ -39,10 +51,58 @@ const ProductForm = ({
     defaultValues:
       product && type === "Update" ? product : productDefaultValues,
   });
+
+  // Cleanup timeout on component unmount
+  React.useEffect(() => {
+    return () => {
+      if (uploadTimeout) {
+        clearTimeout(uploadTimeout);
+      }
+    };
+  }, [uploadTimeout]);
+
+  const onSubmit: SubmitHandler<z.infer<typeof insertProductSchema>> = async (
+    values
+  ) => {
+    if (type === "Create") {
+      const res = await createProduct(values);
+      if (!res.success) {
+        toast.error(res.message);
+      } else {
+        toast.success(res.message);
+      }
+      router.push("/admin/products");
+    }
+
+    //on Update
+    if (type === "Update") {
+      if (!productId) {
+        router.push("/admin/products");
+        return;
+      }
+
+      const res = await updateProduct({ ...values, id: productId });
+      if (!res.success) {
+        toast.error(res.message);
+      } else {
+        toast.success(res.message);
+      }
+      router.push("/admin/products");
+    }
+  };
+
+  const images = form.watch("images");
+  const isFeatured = form.watch("isFeatured");
+  const banner = form.watch("banner");
+
   return (
     <Form {...form}>
-      <form className="space-y-8">
-        <div className="flex flex-col gap-5 md:flex-row gap-5">
+      <form
+        method="POST"
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-8"
+      >
+        <div className="flex flex-col md:flex-row gap-5">
           {/* Name */}
           <FormField
             control={form.control}
@@ -100,7 +160,7 @@ const ProductForm = ({
             )}
           />
         </div>
-        <div className="flex flex-col gap-5 md:flex-row gap-5">
+        <div className="flex flex-col gap-5 md:flex-row">
           {/* category */}
           <FormField
             control={form.control}
@@ -144,7 +204,7 @@ const ProductForm = ({
             )}
           />
         </div>
-        <div className="flex flex-col gap-5 md:flex-row gap-5">
+        <div className="flex flex-col gap-5 md:flex-row">
           {/* Price */}
           <FormField
             control={form.control}
@@ -189,10 +249,224 @@ const ProductForm = ({
             )}
           />
         </div>
-        <div className="upload-field flex flex-col gap-5 md:flex-row gap-5">
+        <div className="upload-field flex flex-col md:flex-row gap-5">
           {/* Images */}
+          <FormField
+            control={form.control}
+            name="images"
+            render={() => (
+              <FormItem className="w-full">
+                <FormLabel> Images </FormLabel>
+                <Card>
+                  <CardContent className="space-y-2 mt-2 min-h-48">
+                    <div className="flex-start space-x-2">
+                      {images && images.length > 0 ? (
+                        images.map((image: string) => (
+                          <Image
+                            key={image}
+                            src={image || "/images/placeholder.svg"}
+                            alt="product image"
+                            className="w-20 h-20 object-cover object-center rounded-sm"
+                            width={100}
+                            height={100}
+                          />
+                        ))
+                      ) : (
+                        <div className="flex items-center justify-center w-20 h-20 bg-gray-100 rounded-sm">
+                          <span className="text-xs text-gray-500">
+                            No images
+                          </span>
+                        </div>
+                      )}
+                      <FormControl>
+                        <UploadButton
+                          endpoint="imageUploader"
+                          onUploadBegin={() => {
+                            setIsUploading(true);
+                            setUploadProgress(0);
+                            toast.info("Starting upload...");
+
+                            // Set upload timeout (30 seconds)
+                            const timeout = setTimeout(() => {
+                              setIsUploading(false);
+                              setUploadProgress(0);
+                              toast.error(
+                                "Upload timeout - please try again with a smaller file"
+                              );
+                            }, 30000);
+                            setUploadTimeout(timeout);
+                          }}
+                          onUploadProgress={(progress) => {
+                            setUploadProgress(progress);
+                            if (progress === 100) {
+                              toast.info("Processing upload...");
+                            }
+                          }}
+                          onClientUploadComplete={(res: { url: string }[]) => {
+                            if (uploadTimeout) {
+                              clearTimeout(uploadTimeout);
+                              setUploadTimeout(null);
+                            }
+
+                            if (res && res[0]?.url) {
+                              form.setValue("images", [...images, res[0].url]);
+                              setIsUploading(false);
+                              setUploadProgress(100);
+                              toast.success("Image uploaded successfully!");
+                            } else {
+                              setIsUploading(false);
+                              setUploadProgress(0);
+                              toast.error(
+                                "Upload completed but no file URL received"
+                              );
+                            }
+                          }}
+                          onUploadError={(error) => {
+                            if (uploadTimeout) {
+                              clearTimeout(uploadTimeout);
+                              setUploadTimeout(null);
+                            }
+
+                            setIsUploading(false);
+                            setUploadProgress(0);
+
+                            const errorMessage =
+                              error.message || "Unknown upload error";
+                            console.error("Upload error:", error);
+                            toast.error(`Upload failed: ${errorMessage}`);
+                          }}
+                          appearance={{
+                            button: isUploading
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-blue-600 hover:bg-blue-700",
+                            allowedContent: "text-sm text-gray-600",
+                          }}
+                          content={{
+                            button: isUploading
+                              ? `Uploading... ${uploadProgress}%`
+                              : "Choose File",
+                            allowedContent: "Image (4MB max)",
+                          }}
+                        />
+                      </FormControl>
+                      {isUploading && (
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
-        <div className="upload-field ">{/* Is Featured */}</div>
+        <div className="upload-field ">
+          {/* isFeatured */}
+          Featured Product
+          <Card>
+            <CardContent className="space-y-2 mt-2">
+              <FormField
+                control={form.control}
+                name="isFeatured"
+                render={({ field }) => (
+                  <FormItem className="space-x-2 items-center">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel>Is Featured ?</FormLabel>
+                  </FormItem>
+                )}
+              />
+              {isFeatured && banner && (
+                <Image
+                  src={banner}
+                  alt="banner image"
+                  className="w-full object-cover object-center rounded-sm"
+                  width={1920}
+                  height={680}
+                />
+              )}
+              {isFeatured && !banner && (
+                <UploadButton
+                  endpoint="imageUploader"
+                  onUploadBegin={() => {
+                    setIsUploading(true);
+                    setUploadProgress(0);
+                    toast.info("Starting upload...");
+
+                    // Set upload timeout (30 seconds)
+                    const timeout = setTimeout(() => {
+                      setIsUploading(false);
+                      setUploadProgress(0);
+                      toast.error(
+                        "Upload timeout - please try again with a smaller file"
+                      );
+                    }, 30000);
+                    setUploadTimeout(timeout);
+                  }}
+                  onUploadProgress={(progress) => {
+                    setUploadProgress(progress);
+                    if (progress === 100) {
+                      toast.info("Processing upload...");
+                    }
+                  }}
+                  onClientUploadComplete={(res: { url: string }[]) => {
+                    if (uploadTimeout) {
+                      clearTimeout(uploadTimeout);
+                      setUploadTimeout(null);
+                    }
+
+                    if (res && res[0]?.url) {
+                      form.setValue("banner", res[0].url);
+                      setIsUploading(false);
+                      setUploadProgress(100);
+                      toast.success("Banner uploaded successfully!");
+                    } else {
+                      setIsUploading(false);
+                      setUploadProgress(0);
+                      toast.error("Upload completed but no file URL received");
+                    }
+                  }}
+                  onUploadError={(error) => {
+                    if (uploadTimeout) {
+                      clearTimeout(uploadTimeout);
+                      setUploadTimeout(null);
+                    }
+
+                    setIsUploading(false);
+                    setUploadProgress(0);
+
+                    const errorMessage =
+                      error.message || "Unknown upload error";
+                    console.error("Upload error:", error);
+                    toast.error(`Upload failed: ${errorMessage}`);
+                  }}
+                  appearance={{
+                    button: isUploading
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700",
+                    allowedContent: "text-sm text-gray-600",
+                  }}
+                  content={{
+                    button: isUploading
+                      ? `Uploading... ${uploadProgress}%`
+                      : "Choose File",
+                    allowedContent: "Image (4MB max)",
+                  }}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
         <div>
           {/* Description */}
           <FormField
@@ -225,10 +499,14 @@ const ProductForm = ({
           <Button
             type="submit"
             size="lg"
-            disabled={form.formState.isSubmitting}
+            disabled={form.formState.isSubmitting || isUploading}
             className="button col-span-2 w-full cursor-pointer"
           >
-            {form.formState.isSubmitting ? "Submitting" : `${type} Product`}
+            {isUploading
+              ? "Uploading..."
+              : form.formState.isSubmitting
+              ? "Submitting..."
+              : `${type} Product`}
           </Button>
         </div>
       </form>
