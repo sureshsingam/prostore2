@@ -28,6 +28,20 @@ import { useState } from "react";
 import React from "react";
 import { Checkbox } from "../ui/checkbox";
 
+// Utility function to validate and return safe image URLs
+const getValidImageSrc = (
+  url: string | null | undefined,
+  fallback: string = "/images/placeholder.svg"
+): string => {
+  if (!url || url.trim() === "") return fallback;
+  try {
+    new URL(url);
+    return url;
+  } catch {
+    return url.startsWith("/") && url.length > 1 ? url : fallback;
+  }
+};
+
 const ProductForm = ({
   type,
   product,
@@ -264,7 +278,7 @@ const ProductForm = ({
                         images.map((image: string) => (
                           <Image
                             key={image}
-                            src={image || "/images/placeholder.svg"}
+                            src={getValidImageSrc(image)}
                             alt="product image"
                             className="w-20 h-20 object-cover object-center rounded-sm"
                             width={100}
@@ -366,106 +380,247 @@ const ProductForm = ({
             )}
           />
         </div>
-        <div className="upload-field ">
+        <div className="upload-field">
           {/* isFeatured */}
-          Featured Product
-          <Card>
-            <CardContent className="space-y-2 mt-2">
-              <FormField
-                control={form.control}
-                name="isFeatured"
-                render={({ field }) => (
-                  <FormItem className="space-x-2 items-center">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel>Is Featured ?</FormLabel>
-                  </FormItem>
-                )}
-              />
-              {isFeatured && banner && (
-                <Image
-                  src={banner}
-                  alt="banner image"
-                  className="w-full object-cover object-center rounded-sm"
-                  width={1920}
-                  height={680}
-                />
-              )}
-              {isFeatured && !banner && (
-                <UploadButton
-                  endpoint="imageUploader"
-                  onUploadBegin={() => {
-                    setIsUploading(true);
-                    setUploadProgress(0);
-                    toast.info("Starting upload...");
+          <FormField
+            control={form.control}
+            name="isFeatured"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Featured Product</FormLabel>
+                <Card>
+                  <CardContent className="space-y-4 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm font-normal">
+                        Is Featured ?
+                      </FormLabel>
+                    </div>
 
-                    // Set upload timeout (30 seconds)
-                    const timeout = setTimeout(() => {
-                      setIsUploading(false);
-                      setUploadProgress(0);
-                      toast.error(
-                        "Upload timeout - please try again with a smaller file"
-                      );
-                    }, 30000);
-                    setUploadTimeout(timeout);
-                  }}
-                  onUploadProgress={(progress) => {
-                    setUploadProgress(progress);
-                    if (progress === 100) {
-                      toast.info("Processing upload...");
-                    }
-                  }}
-                  onClientUploadComplete={(res: { url: string }[]) => {
-                    if (uploadTimeout) {
-                      clearTimeout(uploadTimeout);
-                      setUploadTimeout(null);
-                    }
+                    {isFeatured && (
+                      <div className="space-y-4">
+                        <div className="text-sm text-gray-600">
+                          Featured products require a banner image for display
+                          on the homepage.
+                        </div>
 
-                    if (res && res[0]?.url) {
-                      form.setValue("banner", res[0].url);
-                      setIsUploading(false);
-                      setUploadProgress(100);
-                      toast.success("Banner uploaded successfully!");
-                    } else {
-                      setIsUploading(false);
-                      setUploadProgress(0);
-                      toast.error("Upload completed but no file URL received");
-                    }
-                  }}
-                  onUploadError={(error) => {
-                    if (uploadTimeout) {
-                      clearTimeout(uploadTimeout);
-                      setUploadTimeout(null);
-                    }
+                        {banner && (
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium">
+                              Current Banner:
+                            </div>
+                            <div className="relative">
+                              <Image
+                                src={getValidImageSrc(banner)}
+                                alt="banner image"
+                                className="w-full max-w-md object-cover object-center rounded-sm border"
+                                width={400}
+                                height={200}
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-2 right-2"
+                                onClick={() => {
+                                  form.setValue("banner", null);
+                                  toast.success("Banner removed");
+                                }}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
-                    setIsUploading(false);
-                    setUploadProgress(0);
+                        {!banner && (
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium">
+                              Upload Banner Image:
+                            </div>
+                            <UploadButton
+                              endpoint="imageUploader"
+                              onUploadBegin={() => {
+                                setIsUploading(true);
+                                setUploadProgress(0);
+                                toast.info("Starting banner upload...");
 
-                    const errorMessage =
-                      error.message || "Unknown upload error";
-                    console.error("Upload error:", error);
-                    toast.error(`Upload failed: ${errorMessage}`);
-                  }}
-                  appearance={{
-                    button: isUploading
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700",
-                    allowedContent: "text-sm text-gray-600",
-                  }}
-                  content={{
-                    button: isUploading
-                      ? `Uploading... ${uploadProgress}%`
-                      : "Choose File",
-                    allowedContent: "Image (4MB max)",
-                  }}
-                />
-              )}
-            </CardContent>
-          </Card>
+                                // Set upload timeout (30 seconds)
+                                const timeout = setTimeout(() => {
+                                  setIsUploading(false);
+                                  setUploadProgress(0);
+                                  toast.error(
+                                    "Upload timeout - please try again with a smaller file"
+                                  );
+                                }, 30000);
+                                setUploadTimeout(timeout);
+                              }}
+                              onUploadProgress={(progress) => {
+                                setUploadProgress(progress);
+                                if (progress === 100) {
+                                  toast.info("Processing banner upload...");
+                                }
+                              }}
+                              onClientUploadComplete={(
+                                res: { url: string }[]
+                              ) => {
+                                if (uploadTimeout) {
+                                  clearTimeout(uploadTimeout);
+                                  setUploadTimeout(null);
+                                }
+
+                                if (res && res[0]?.url) {
+                                  form.setValue("banner", res[0].url);
+                                  setIsUploading(false);
+                                  setUploadProgress(100);
+                                  toast.success(
+                                    "Banner uploaded successfully!"
+                                  );
+                                } else {
+                                  setIsUploading(false);
+                                  setUploadProgress(0);
+                                  toast.error(
+                                    "Upload completed but no file URL received"
+                                  );
+                                }
+                              }}
+                              onUploadError={(error) => {
+                                if (uploadTimeout) {
+                                  clearTimeout(uploadTimeout);
+                                  setUploadTimeout(null);
+                                }
+
+                                setIsUploading(false);
+                                setUploadProgress(0);
+
+                                const errorMessage =
+                                  error.message || "Unknown upload error";
+                                console.error("Upload error:", error);
+                                toast.error(`Upload failed: ${errorMessage}`);
+                              }}
+                              appearance={{
+                                button: isUploading
+                                  ? "bg-gray-400 cursor-not-allowed"
+                                  : "bg-blue-600 hover:bg-blue-700",
+                                allowedContent: "text-sm text-gray-600",
+                              }}
+                              content={{
+                                button: isUploading
+                                  ? `Uploading Banner... ${uploadProgress}%`
+                                  : "Choose Banner Image",
+                                allowedContent: "Banner Image (4MB max)",
+                              }}
+                            />
+                            {isUploading && (
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${uploadProgress}%` }}
+                                ></div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {banner && (
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium">
+                              Replace Banner Image:
+                            </div>
+                            <UploadButton
+                              endpoint="imageUploader"
+                              onUploadBegin={() => {
+                                setIsUploading(true);
+                                setUploadProgress(0);
+                                toast.info("Starting banner upload...");
+
+                                // Set upload timeout (30 seconds)
+                                const timeout = setTimeout(() => {
+                                  setIsUploading(false);
+                                  setUploadProgress(0);
+                                  toast.error(
+                                    "Upload timeout - please try again with a smaller file"
+                                  );
+                                }, 30000);
+                                setUploadTimeout(timeout);
+                              }}
+                              onUploadProgress={(progress) => {
+                                setUploadProgress(progress);
+                                if (progress === 100) {
+                                  toast.info("Processing banner upload...");
+                                }
+                              }}
+                              onClientUploadComplete={(
+                                res: { url: string }[]
+                              ) => {
+                                if (uploadTimeout) {
+                                  clearTimeout(uploadTimeout);
+                                  setUploadTimeout(null);
+                                }
+
+                                if (res && res[0]?.url) {
+                                  form.setValue("banner", res[0].url);
+                                  setIsUploading(false);
+                                  setUploadProgress(100);
+                                  toast.success("Banner updated successfully!");
+                                } else {
+                                  setIsUploading(false);
+                                  setUploadProgress(0);
+                                  toast.error(
+                                    "Upload completed but no file URL received"
+                                  );
+                                }
+                              }}
+                              onUploadError={(error) => {
+                                if (uploadTimeout) {
+                                  clearTimeout(uploadTimeout);
+                                  setUploadTimeout(null);
+                                }
+
+                                setIsUploading(false);
+                                setUploadProgress(0);
+
+                                const errorMessage =
+                                  error.message || "Unknown upload error";
+                                console.error("Upload error:", error);
+                                toast.error(`Upload failed: ${errorMessage}`);
+                              }}
+                              appearance={{
+                                button: isUploading
+                                  ? "bg-gray-400 cursor-not-allowed"
+                                  : "bg-green-600 hover:bg-green-700",
+                                allowedContent: "text-sm text-gray-600",
+                              }}
+                              content={{
+                                button: isUploading
+                                  ? `Uploading... ${uploadProgress}%`
+                                  : "Replace Banner",
+                                allowedContent: "New Banner Image (4MB max)",
+                              }}
+                            />
+                            {isUploading && (
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${uploadProgress}%` }}
+                                ></div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         <div>
           {/* Description */}
