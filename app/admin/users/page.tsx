@@ -23,10 +23,17 @@ export const metadata: Metadata = {
 const AdminUsersPage = async (props: {
   searchParams: Promise<{
     page: string;
+    query: string;
   }>;
 }) => {
-  const { page = "1" } = await props.searchParams;
-  const users = await getAllUsers({ page: Number(page) });
+  const searchParams = await props.searchParams;
+  const page = Number(searchParams.page) || 1;
+  const searchText = searchParams.query || "";
+
+  const users = await getAllUsers({
+    query: searchText,
+    page: page,
+  });
   console.log(users);
   return (
     <>

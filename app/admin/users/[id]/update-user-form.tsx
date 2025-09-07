@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/select";
 import { USER_ROLES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { formatErrors } from "@/lib/utils";
+import { updateUser } from "@/lib/actions/user.actions";
 
 export const metadata: Metadata = {
   title: "Update User",
@@ -41,7 +43,21 @@ const UpdateUserForm = ({
     resolver: zodResolver(updateUserSchema),
     defaultValues: user,
   });
-  const onSubmit = () => {
+  const onSubmit = async (values: z.infer<typeof updateUserSchema>) => {
+    try {
+      const res = await updateUser({
+        ...values,
+        id: user.id,
+      });
+      if (!res.success) {
+        toast.error("Update User Failed. Please try again" + res.message);
+      }
+      toast.success("User Updated Successfully");
+      form.reset();
+      router.push("/admin/users");
+    } catch (error) {
+      toast.error("Update User Failed. Please try again" + formatErrors(error));
+    }
     return;
   };
   return (
@@ -139,7 +155,7 @@ const UpdateUserForm = ({
         <div className="flex-between mt-4">
           <Button
             type="submit"
-            className="w-full"
+            className="w-full cursor-pointer"
             disabled={form.formState.isSubmitting}
           >
             {form.formState.isSubmitting ? "Submitting" : "Update User"}

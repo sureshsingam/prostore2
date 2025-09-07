@@ -47,12 +47,66 @@ export async function getAllProducts({
   page: number;
   category?: string;
 }) {
+  // Build the where clause for filtering
+  const whereClause: {
+    OR?: Array<{
+      name?: { contains: string; mode: "insensitive" };
+      description?: { contains: string; mode: "insensitive" };
+      category?: { contains: string; mode: "insensitive" };
+      brand?: { contains: string; mode: "insensitive" };
+    }>;
+    category?: { equals: string; mode: "insensitive" };
+  } = {};
+
+  // Add search query filter if provided
+  if (query && query.trim() !== "") {
+    whereClause.OR = [
+      {
+        name: {
+          contains: query,
+          mode: "insensitive",
+        },
+      },
+      {
+        description: {
+          contains: query,
+          mode: "insensitive",
+        },
+      },
+      {
+        category: {
+          contains: query,
+          mode: "insensitive",
+        },
+      },
+      {
+        brand: {
+          contains: query,
+          mode: "insensitive",
+        },
+      },
+    ];
+  }
+
+  // Add category filter if provided
+  if (category && category.trim() !== "") {
+    whereClause.category = {
+      equals: category,
+      mode: "insensitive",
+    };
+  }
+
   const data = await prisma.product.findMany({
+    where: whereClause,
     orderBy: { createdAt: "desc" },
     skip: (page - 1) * limit,
     take: limit,
   });
-  const dataCount = await prisma.product.count();
+
+  const dataCount = await prisma.product.count({
+    where: whereClause,
+  });
+
   return {
     data,
     totalPages: Math.ceil(dataCount / limit),

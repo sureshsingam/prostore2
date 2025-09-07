@@ -364,20 +364,77 @@ export async function getOrderSummary() {
 
 // Get All Orders
 export async function getAllOrders({
+  query,
   limit = PAGE_SIZE,
   page,
 }: {
+  query?: string;
   limit: number;
   page: number;
 }) {
+  // Build the where clause for filtering
+  const whereClause: Prisma.OrderWhereInput = {};
+
+  // Add search query filter if provided
+  if (query && query.trim() !== "") {
+    const searchQuery = query.toLowerCase().trim();
+    const orConditions: Prisma.OrderWhereInput[] = [];
+
+    // Search in user name and email
+    orConditions.push(
+      {
+        user: {
+          name: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+      },
+      {
+        user: {
+          email: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+      }
+    );
+
+    // Search in payment method
+    orConditions.push({
+      paymentMethod: {
+        contains: query,
+        mode: "insensitive",
+      },
+    });
+
+    // Handle status searches
+    if (searchQuery === "paid" || searchQuery === "unpaid") {
+      orConditions.push({
+        isPaid: searchQuery === "paid",
+      });
+    }
+
+    if (searchQuery === "delivered" || searchQuery === "not delivered") {
+      orConditions.push({
+        isDelivered: searchQuery === "delivered",
+      });
+    }
+
+    whereClause.OR = orConditions;
+  }
+
   const data = await prisma.order.findMany({
+    where: whereClause,
     orderBy: { createdAt: "desc" },
     take: limit,
     skip: (page - 1) * limit,
     include: { user: { select: { name: true } } },
   });
 
-  const dataCount = await prisma.order.count();
+  const dataCount = await prisma.order.count({
+    where: whereClause,
+  });
 
   return {
     data,

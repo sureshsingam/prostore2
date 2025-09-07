@@ -22,16 +22,20 @@ export const metadata: Metadata = {
 };
 
 const AdminOrdersPage = async (props: {
-  searchParams: Promise<{ page: string }>;
+  searchParams: Promise<{ page: string; query: string }>;
 }) => {
-  const { page = "1" } = await props.searchParams;
+  const searchParams = await props.searchParams;
+  const page = Number(searchParams.page) || 1;
+  const searchText = searchParams.query || "";
+
   const session = await auth();
   if (session?.user?.role !== "admin") {
     throw new Error("User is not authorized");
   }
   const orders = await getAllOrders({
+    query: searchText,
     limit: PAGE_SIZE,
-    page: Number(page),
+    page: page,
   });
 
   return (
