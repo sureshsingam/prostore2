@@ -409,7 +409,7 @@ export async function getAllOrders({
     });
 
     // Handle status searches
-    if (searchQuery === "paid" || searchQuery === "unpaid") {
+    if (searchQuery === "paid" || searchQuery === "not paid") {
       orConditions.push({
         isPaid: searchQuery === "paid",
       });
