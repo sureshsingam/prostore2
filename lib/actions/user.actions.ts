@@ -14,6 +14,8 @@ import { hashSync } from "bcrypt-ts-edge";
 import { prisma } from "@/db/prisma";
 import { formatErrors } from "../utils";
 import { paymentMethodSchema } from "../validators";
+import { PAGE_SIZE } from "../constants";
+import { revalidatePath } from "next/cache";
 
 // sign in the user with credentials (using credential provider)
 
@@ -179,6 +181,47 @@ export async function updateProfile(user: { name: string; email: string }) {
     return {
       success: true,
       message: "user updated successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: formatErrors(error),
+    };
+  }
+}
+
+// Get All the users
+
+export async function getAllUsers({
+  limit = PAGE_SIZE,
+  page,
+}: {
+  limit?: number;
+  page: number;
+}) {
+  const data = await prisma.user.findMany({
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    skip: (page - 1) * limit,
+  });
+
+  const dataCount = await prisma.user.count();
+  return {
+    data: data,
+    totalPages: Math.ceil(dataCount / limit),
+  };
+}
+
+// delete user by admin
+export async function deleteUser(id: string) {
+  try {
+    await prisma.user.delete({
+      where: { id: id },
+    });
+    revalidatePath("/admin/users");
+    return {
+      success: true,
+      message: "User deleted successfully",
     };
   } catch (error) {
     return {
