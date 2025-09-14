@@ -44,6 +44,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tailwinds": "^0.0.0",
     "uploadthing": "^7.7.4",
+    "vaul": "^1.1.2",
     "ws": "^8.18.3",
     "zod": "^3.25.76"
   },
