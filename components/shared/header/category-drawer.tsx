@@ -8,7 +8,6 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { getAllCategories } from "@/lib/actions/product.actions";
-import { get } from "http";
 import { MenuIcon } from "lucide-react";
 import Link from "next/link";
 
