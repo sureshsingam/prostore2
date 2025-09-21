@@ -41,11 +41,17 @@ export async function getAllProducts({
   limit = PAGE_SIZE,
   page,
   category,
+  price,
+  rating,
+  sort,
 }: {
   query: string;
   limit?: number;
   page: number;
   category?: string;
+  price?: string;
+  rating?: string;
+  sort?: string;
 }) {
   // Build the where clause for filtering
   const whereClause: {
@@ -56,10 +62,12 @@ export async function getAllProducts({
       brand?: { contains: string; mode: "insensitive" };
     }>;
     category?: { equals: string; mode: "insensitive" };
+    price?: { gte?: number; lte?: number };
+    rating?: { equals?: number; gte?: number; lte?: number };
   } = {};
 
-  // Add search query filter if provided
-  if (query && query.trim() !== "") {
+  // Add search query filter if provided (but not for "all" which means show all products)
+  if (query && query.trim() !== "" && query.toLowerCase() !== "all") {
     whereClause.OR = [
       {
         name: {
@@ -88,17 +96,58 @@ export async function getAllProducts({
     ];
   }
 
-  // Add category filter if provided
-  if (category && category.trim() !== "") {
+  // Add category filter if provided (but not for "all" which means show all categories)
+  if (category && category.trim() !== "" && category.toLowerCase() !== "all") {
     whereClause.category = {
       equals: category,
       mode: "insensitive",
     };
   }
 
+  // Add price range filter if provided
+  if (price && price !== "all" && price.trim() !== "") {
+    const priceParts = price.split("-");
+    if (priceParts.length === 2) {
+      const minPrice = parseFloat(priceParts[0]);
+      const maxPrice = parseFloat(priceParts[1]);
+
+      if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+        whereClause.price = {
+          gte: minPrice,
+          lte: maxPrice,
+        };
+      }
+    }
+  }
+
+  // Add rating filter if provided (exact match)
+  if (rating && rating !== "all" && rating.trim() !== "") {
+    const ratingValue = parseFloat(rating);
+    if (!isNaN(ratingValue)) {
+      whereClause.rating = {
+        gte: Number(ratingValue),
+      };
+    }
+  }
+
+  // Helper function to determine sort order
+  const getOrderBy = (sortParam: string) => {
+    switch (sortParam) {
+      case "price-asc":
+        return { price: "asc" as const };
+      case "price-desc":
+        return { price: "desc" as const };
+      case "rating-desc":
+        return { rating: "desc" as const };
+      case "newest":
+      default:
+        return { createdAt: "desc" as const };
+    }
+  };
+
   const data = await prisma.product.findMany({
     where: whereClause,
-    orderBy: { createdAt: "desc" },
+    orderBy: getOrderBy(sort || "newest"),
     skip: (page - 1) * limit,
     take: limit,
   });
