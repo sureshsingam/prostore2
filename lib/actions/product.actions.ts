@@ -133,11 +133,11 @@ export async function getAllProducts({
   // Helper function to determine sort order
   const getOrderBy = (sortParam: string) => {
     switch (sortParam) {
-      case "price-asc":
+      case "lowest":
         return { price: "asc" as const };
-      case "price-desc":
+      case "highest":
         return { price: "desc" as const };
-      case "rating-desc":
+      case "rating":
         return { rating: "desc" as const };
       case "newest":
       default:
