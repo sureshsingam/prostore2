@@ -27,15 +27,18 @@ import {
 } from "@/lib/actions/order.actions";
 import { toast } from "sonner";
 import { useTransition } from "react";
+import StripePayment from "./stripe-payments";
 
 const OrderDetailsTable = ({
   order,
   paypalClientId,
   isAdmin,
+  stripeClientSecret,
 }: {
   order: Order;
   paypalClientId: string;
   isAdmin: boolean;
+  stripeClientSecret: string;
 }) => {
   const {
     id,
@@ -234,6 +237,16 @@ const OrderDetailsTable = ({
                   return null;
                 }
               })()}
+
+              {/* Stripe Payment */}
+              {!isPaid && paymentMethod === "Stripe" && stripeClientSecret && (
+                <StripePayment
+                  priceInCents={Number(order.totalPrice) * 100}
+                  orderId={order.id}
+                  clientSecret={stripeClientSecret}
+                />
+              )}
+
               {/* Cash on delivery*/}
               {isAdmin && !isPaid && paymentMethod === "CashOnDelivery" && (
                 <MarkAsPaidButton />
