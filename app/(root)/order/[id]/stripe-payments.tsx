@@ -100,9 +100,7 @@ const StripePayment = ({
       }}
       stripe={stripePromise}
     >
-      <p>
-        <StripeForm />
-      </p>
+      <StripeForm />
     </Elements>
   );
 };
