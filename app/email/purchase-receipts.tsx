@@ -1,3 +1,4 @@
+import sampleData from "@/db/sample-data";
 import { formatCurrency } from "@/lib/utils";
 import { Order } from "@/types";
 import {
@@ -15,9 +16,55 @@ import {
   Text,
 } from "@react-email/components";
 
+PurchaseReceiptEmail.PreviewProps = {
+  order: {
+    id: crypto.randomUUID(),
+    userId: "123",
+    user: {
+      name: "John Doe",
+      email: "test@test.com",
+    },
+    paymentMethod: "Stripe",
+    shippingAddress: {
+      fullName: "John Doe",
+      streetAddress: "123 Main St",
+      city: "New York",
+      postalCode: "10001",
+      country: "USA",
+    },
+    createdAt: new Date(),
+    itemsPrice: "100",
+    taxPrice: "10",
+    shippingPrice: "5",
+    totalPrice: "115",
+    orderitems: sampleData.products.map((x) => ({
+      name: x.name,
+      orderId: "123",
+      productId: "123",
+      slug: x.slug,
+      quantity: x.stock,
+      image: x.images[0],
+      price: x.price.toString(),
+    })),
+    isDelivered: true,
+    deliveredAt: new Date(),
+    isPaid: true,
+    paidAt: new Date(),
+    paymentResult: {
+      id: "123",
+      status: "succeeded",
+      pricePaid: "100",
+      email_address: "test@test.com",
+    },
+  },
+} satisfies OrderInformationProps;
+
 const dateFormatter = new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" });
 
-const PURCHASERECEIPTEMAIL = ({ order }: { order: Order }) => {
+type OrderInformationProps = {
+  order: Order;
+};
+export default function PurchaseReceiptEmail({ order }: { order: Order }) {
   return (
     <Html>
       <Preview>View Order Receipt</Preview>
@@ -62,7 +109,7 @@ const PURCHASERECEIPTEMAIL = ({ order }: { order: Order }) => {
                       className="rounded"
                       src={
                         item.image.startsWith("/")
-                          ? `${process.env.NEXT_PUBLIC_SERVER}${item.image}`
+                          ? `${process.env.NEXT_PUBLIC_SERVER_URL}${item.image}`
                           : item.image
                       }
                     />
@@ -94,6 +141,4 @@ const PURCHASERECEIPTEMAIL = ({ order }: { order: Order }) => {
       </Tailwind>
     </Html>
   );
-};
-
-export default PURCHASERECEIPTEMAIL;
+}
