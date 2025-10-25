@@ -1,0 +1,16 @@
+import { Resend } from "resend";
+import { SENDER_EMAIL, APP_NAME } from "@/lib/constants";
+import { Order } from "@/types";
+import PURCHASERECEIPTEMAIL from "@/app/email/purchase-receipts";
+
+const resend = new Resend(process.env.RESEND_API_KEY as string);
+
+// function to send email
+export const sendPurchaseReceipt = async ({ order }: { order: Order }) => {
+  await resend.emails.send({
+    from: `${APP_NAME} <${SENDER_EMAIL}>`,
+    to: order.user.email,
+    subject: `Order Confirmation : ${order.id}`,
+    react: <PURCHASERECEIPTEMAIL order={order} />,
+  });
+};
