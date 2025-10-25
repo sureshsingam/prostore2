@@ -107,11 +107,7 @@ export default function PurchaseReceiptEmail({ order }: { order: Order }) {
                       width="80"
                       alt={item.name}
                       className="rounded"
-                      src={
-                        item.image.startsWith("/")
-                          ? `${process.env.NEXT_PUBLIC_SERVER_URL}${item.image}`
-                          : item.image
-                      }
+                      src={item.image}
                     />
                   </Column>
                   <Column className="align-top">
