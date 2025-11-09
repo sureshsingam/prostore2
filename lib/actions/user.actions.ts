@@ -17,6 +17,7 @@ import { formatErrors } from "../utils";
 import { paymentMethodSchema } from "../validators";
 import { PAGE_SIZE } from "../constants";
 import { revalidatePath } from "next/cache";
+import { getMyCart } from "./cart.action";
 
 // sign in the user with credentials (using credential provider)
 
@@ -48,6 +49,9 @@ export async function signInWithCredentials(
 //Sign user out
 
 export async function signOutUser() {
+  // get current users cart and delete it so it does not persist to next user
+  const currentCart = await getMyCart();
+  await prisma.cart.delete({ where: { id: currentCart?.id } });
   await signOut();
 }
 
